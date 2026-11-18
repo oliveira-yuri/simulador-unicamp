@@ -198,7 +198,7 @@ function render() {
       <span class="tag ${q.tipo === "fixo" ? "fixo" : "rot"}">${q.tipo === "fixo" ? "fixo" : "rotativo"} · caiu em ${Math.round(q.freq * q.nAnos)} de ${q.nAnos} provas</span>`;
     html += `<article class="q" aria-label="Questão ${k}">
       <div class="qh"><h3>Questão ${k}</h3><div class="meta" ${hide ? "hidden" : ""} data-meta>${meta}</div></div>
-      <div class="imgs">${q.enun.map(s => `<img src="img/${s}" alt="Enunciado da questão ${k} (Unicamp ${hide ? "" : q.ano})" loading="lazy">`).join("")}</div>
+      <div class="imgs">${q.enun.map(s => `<img src="img/${s}" alt="Enunciado da questão ${k}${hide ? "" : ` (Unicamp ${q.ano})`}">`).join("")}</div>
       <details data-id="${q.id}"><summary><span>Resposta esperada e comentários da banca</span><span class="meta muted" style="font-weight:400">${meta.replace(/<span class="tag[^]*$/, "")}</span></summary>
         <div class="imgs">${q.resp.map(s => `<img src="img/${s}" alt="Resposta esperada da questão ${k}" loading="lazy">`).join("")}</div></details>
       <div class="score"><label for="s-${q.id}">Minha nota</label>
