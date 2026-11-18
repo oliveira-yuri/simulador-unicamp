@@ -199,7 +199,7 @@ function render() {
     html += `<article class="q" aria-label="Questão ${k}">
       <div class="qh"><h3>Questão ${k}</h3><div class="meta" ${hide ? "hidden" : ""} data-meta>${meta}</div></div>
       <div class="imgs">${q.enun.map(s => `<img src="img/${s}" alt="Enunciado da questão ${k}${hide ? "" : ` (Unicamp ${q.ano})`}">`).join("")}</div>
-      <details data-id="${q.id}"><summary><span>Resposta esperada e comentários da banca</span><span class="meta muted" style="font-weight:400">${meta.replace(/<span class="tag[^]*$/, "")}</span></summary>
+      <details data-id="${q.id}"><summary><span>Resposta esperada e comentários da banca</span></summary>
         <div class="imgs">${q.resp.map(s => `<img src="img/${s}" alt="Resposta esperada da questão ${k}" loading="lazy">`).join("")}</div></details>
       <div class="score"><label for="s-${q.id}">Minha nota</label>
         <select id="s-${q.id}" data-score><option value="">–</option>${[0, 1, 2, 3, 4].map(v => `<option>${v}</option>`).join("")}</select><span class="muted">de 4 pontos</span></div>
