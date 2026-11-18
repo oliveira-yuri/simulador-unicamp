@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Simulador 2ª fase Exatas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: painel de configuração no topo, simulado em coluna única de cartões (uma questão por cartão), barra fixa com cronômetro e nota. */
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --fg: #15171b; --fg2: #4d525c; --muted: #7a808a; --line: #dfe2e7;
+  --accent: #2a78d6; --mat: #2a78d6; --fis: #eb6834; --qui: #1baf7a; --fix: #1c5cab; --rot: #8a5a00;
+  --font-d: "Space Grotesk", "Segoe UI", system-ui, sans-serif; --font-b: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-m: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root { --bg: #121315; --surface: #1b1c1e; --fg: #f0efec; --fg2: #c3c2b7; --muted: #8f8e86;
+  --line: #2f3033; --accent: #3987e5; --mat: #3987e5; --fis: #d95926; --qui: #199e70; --fix: #86b6ef; --rot: #eda100; color-scheme: dark } }
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-b) }
+.wrap { max-width: 900px; margin: 0 auto; padding: 28px 16px 96px; display: flex; flex-direction: column; gap: 24px }
+h1, h2, h3 { font-family: var(--font-d); margin: 0; text-wrap: balance }
+h1 { font-size: clamp(26px, 4.5vw, 36px); line-height: 1.15 }
+p { margin: 0; max-width: 70ch } .muted { color: var(--fg2) }
+.eyebrow { font: 500 12px var(--font-m); letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px }
+.row { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end }
+.field { display: flex; flex-direction: column; gap: 6px }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
+.seg button { font: 500 13px var(--font-b); color: var(--fg2); background: var(--surface); border: 0; border-right: 1px solid var(--line); padding: 8px 12px; cursor: pointer }
+.seg button:last-child { border-right: 0 }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--surface) }
+label.chk { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; cursor: pointer }
+select { font: 14px var(--font-b); padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--fg) }
+.btn { font: 600 14px var(--font-b); padding: 10px 16px; border-radius: 8px; border: 1px solid var(--fg); background: var(--fg); color: var(--surface); cursor: pointer }
+.btn.ghost { background: transparent; color: var(--fg); border-color: var(--line) }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px }
+.plan div { font-size: 13px; display: flex; flex-direction: column; gap: 4px }
+.plan h3 { font-size: 15px; display: flex; gap: 8px; align-items: center }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex: none }
+.tag { font: 500 11px var(--font-m); padding: 1px 7px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap }
+.tag.fixo { color: var(--fix) } .tag.rot { color: var(--rot) }
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden }
+.qh { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line) }
+.qh h3 { font-size: 17px; display: flex; gap: 8px; align-items: center }
+.qh .meta { font-size: 12.5px; color: var(--fg2); display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
+.imgs { background: #fff; display: flex; flex-direction: column }
+.imgs img { width: 100%; display: block }
+details { border-top: 1px solid var(--line) }
+summary { cursor: pointer; padding: 12px 16px; font-weight: 600; font-size: 14px; list-style: none; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+summary::-webkit-details-marker { display: none }
+summary::before { content: "▸ "; } details[open] summary::before { content: "▾ " }
+.score { display: flex; gap: 8px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 13.5px; flex-wrap: wrap }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); z-index: 5 }
+.bar .in { max-width: 900px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 12px 20px; align-items: center; flex-wrap: wrap }
+.clock { font: 500 20px var(--font-m); font-variant-numeric: tabular-nums }
+.total { font: 600 15px var(--font-d) }
+.sec-h { display: flex; gap: 10px; align-items: center; margin-top: 8px }
+.sec-h h2 { font-size: 22px }
+.empty { text-align: center; padding: 32px 16px; color: var(--fg2) }
+@media print {
+  .no-print, .bar, details, .score { display: none !important }
+  body { background: #fff; color: #000 } .q { break-inside: auto; border: 0 } .qh { border: 0 } .wrap { padding: 0 }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="no-print" style="display:flex;flex-direction:column;gap:10px">
+    <div class="eyebrow">Vestibular Unicamp · 2ª fase · 2º dia · Ciências Exatas</div>
+    <h1>Simulador de prova de Exatas</h1>
+    <p class="muted">Cada simulado usa questões reais das provas comentadas da Comvest. Os assuntos que caem em quase toda prova do período escolhido ocupam as vagas fixas. As vagas restantes são sorteadas entre os outros assuntos, com mais chance para os que caem mais. Depois de resolver, abra a resposta esperada oficial e dê a sua nota de 0 a 4.</p>
+  </header>
+
+  <section class="panel no-print" aria-labelledby="cfg-h">
+    <h2 id="cfg-h" style="font-size:18px">Montar simulado</h2>
+    <div class="row">
+      <div class="field"><span class="eyebrow" id="per-l">Período de referência</span>
+        <div class="seg" id="seg" role="group" aria-labelledby="per-l">
+          <button type="button" data-p="2020" aria-pressed="true">Formato atual · 2020–2026</button>
+          <button type="button" data-p="2015" aria-pressed="false">2015–2026</button>
+          <button type="button" data-p="1998" aria-pressed="false">Tudo · 1998–2026</button>
+        </div></div>
+      <div class="field"><label class="eyebrow" for="nq">Questões por matéria</label>
+        <select id="nq"><option>3</option><option>4</option><option>5</option><option selected>6</option><option>8</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><span class="eyebrow">Matérias</span>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <label class="chk"><input type="checkbox" id="m-Matemática" checked> Matemática</label>
+          <label class="chk"><input type="checkbox" id="m-Física" checked> Física</label>
+          <label class="chk"><input type="checkbox" id="m-Química" checked> Química</label>
+        </div></div>
+      <label class="chk"><input type="checkbox" id="hideMeta" checked> Esconder ano e assunto até abrir a resposta</label>
+    </div>
+    <div class="row">
+      <button class="btn" id="gen" type="button">Gerar simulado</button>
+      <button class="btn ghost" id="print" type="button">Imprimir enunciados</button>
+      <button class="btn ghost" id="reset" type="button">Esquecer questões já vistas</button>
+      <span class="muted" id="seenInfo" style="font-size:13px"></span>
+    </div>
+    <div class="plan" id="plan"></div>
+  </section>
+
+  <main id="exam" style="display:flex;flex-direction:column;gap:16px"><div class="empty">Escolha o período e clique em <strong>Gerar simulado</strong>.</div></main>
+
+  <footer class="no-print muted" style="font-size:12.5px">Questões, respostas esperadas e comentários: provas comentadas oficiais da Comvest/Unicamp (comvest.unicamp.br). Uso educacional e sem fins comerciais. A classificação por assunto foi feita por IA e pode ter erros.</footer>
+</div>
+
+<div class="bar no-print"><div class="in">
+  <span class="clock" id="clock" aria-live="off">0:00:00</span>
+  <button class="btn ghost" id="clockBtn" type="button">Iniciar cronômetro</button>
+  <span class="muted" id="sug" style="font-size:13px"></span>
+  <span class="total" id="total" style="margin-left:auto"></span>
+</div></div>
+
+<script src="banco.js"></script>
+<script>
+const MATS = ["Matemática", "Física", "Química"];
+const COL = { "Matemática": "var(--mat)", "Física": "var(--fis)", "Química": "var(--qui)" };
+const FIXO_MIN = 0.6;       // assunto presente em >= 60% das provas do período vira vaga fixa
+const MIN_POR_QUESTAO = 15; // 2º dia da Unicamp: ~5 h para 20 questões
+const B = window.BANCO || [];
+let period = 2020, exam = [];
+const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch (_) { return d } },
+                set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch (_) {} } };
+let seen = new Set(store.get("vistas", []));
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+const rnd = a => a[Math.floor(Math.random() * a.length)];
+
+// Frequência de cada assunto: fração das provas do período em que caiu (principal ou secundário).
+// Usa a classificação completa (CLASSIF: [ano, matéria, assunto, secundário]), não só as questões recortadas.
+const C = window.CLASSIF || B.map(q => [q.ano, q.materia, q.assunto, q.sec]);
+function stats(m) {
+  const R = C.filter(r => r[1] === m && r[0] >= period), anos = new Set(R.map(r => r[0])), f = {};
+  for (const a of new Set(C.filter(r => r[1] === m).map(r => r[2])))
+    f[a] = new Set(R.filter(r => r[2] === a || r[3] === a).map(r => r[0])).size / (anos.size || 1);
+  return { f, nAnos: anos.size };
+}
+
+// Sorteio ponderado sem reposição.
+function sample(items, weights, k) {
+  items = [...items]; weights = [...weights]; const out = [];
+  while (out.length < k && items.length) {
+    let t = weights.reduce((s, w) => s + w, 0) * Math.random(), i = 0;
+    while (i < items.length - 1 && (t -= weights[i]) > 0) i++;
+    out.push(items.splice(i, 1)[0]); weights.splice(i, 1);
+  }
+  return out;
+}
+
+// Prioridade: questão inédita do período > inédita de qualquer ano > qualquer uma do período > qualquer.
+function pickQuestion(m, a, used) {
+  const c = B.filter(q => q.materia === m && q.assunto === a && !used.has(q.id));
+  const tiers = [c.filter(q => q.ano >= period && !seen.has(q.id)), c.filter(q => !seen.has(q.id)), c.filter(q => q.ano >= period), c];
+  const t = tiers.find(x => x.length); return t ? rnd(t) : null;
+}
+
+function plan(m, n) {
+  const { f, nAnos } = stats(m), has = a => B.some(q => q.materia === m && q.assunto === a);
+  const ord = Object.keys(f).filter(has).sort((a, b) => f[b] - f[a] || Math.random() - .5);
+  const fixos = ord.filter(a => f[a] >= FIXO_MIN).slice(0, Math.round(n * 2 / 3));
+  const resto = ord.filter(a => !fixos.includes(a) && f[a] > 0);
+  const rot = sample(resto, resto.map(a => f[a]), n - fixos.length);
+  return { fixos, rot, f, nAnos };
+}
+
+function generate() {
+  const n = +document.getElementById("nq").value, used = new Set(); exam = [];
+  const planHtml = [];
+  for (const m of MATS) {
+    if (!document.getElementById("m-" + m).checked) continue;
+    const p = plan(m, n), slots = [...p.fixos.map(a => [a, "fixo"]), ...p.rot.map(a => [a, "rot"])];
+    const qs = [];
+    for (const [a, tipo] of slots) { const q = pickQuestion(m, a, used); if (q) { used.add(q.id); qs.push({ ...q, tipo, freq: p.f[a], nAnos: p.nAnos }); } }
+    qs.sort(() => Math.random() - .5); exam.push(...qs);
+    planHtml.push(`<div><h3><i class="sw" style="background:${COL[m]}"></i>${m}</h3>
+      <span><span class="tag fixo">fixo</span> ${p.fixos.map(esc).join(" · ") || "nenhum"}</span>
+      <span><span class="tag rot">rotativo</span> ${p.rot.map(esc).join(" · ") || "nenhum"}</span></div>`);
+  }
+  document.getElementById("plan").innerHTML = planHtml.join("");
+  exam.forEach(q => seen.add(q.id)); store.set("vistas", [...seen]);
+  store.set("ultimo", exam.map(q => q.id));
+  render(); resetClock();
+}
+
+function render() {
+  const hide = document.getElementById("hideMeta").checked, el = document.getElementById("exam");
+  if (!exam.length) { el.innerHTML = `<div class="empty">Nenhuma questão disponível para essa combinação.</div>`; return; }
+  let html = "", lastM = "", k = 0;
+  for (const q of exam) {
+    if (q.materia !== lastM) { lastM = q.materia; html += `<div class="sec-h"><i class="sw" style="background:${COL[q.materia]};width:14px;height:14px"></i><h2>${q.materia}</h2></div>`; }
+    k++;
+    const meta = `<span>Unicamp ${q.ano} · questão ${esc(q.q)}</span><span>${esc(q.assunto)}${q.sec ? " + " + esc(q.sec) : ""}</span>
+      <span class="tag ${q.tipo === "fixo" ? "fixo" : "rot"}">${q.tipo === "fixo" ? "fixo" : "rotativo"} · caiu em ${Math.round(q.freq * q.nAnos)} de ${q.nAnos} provas</span>`;
+    html += `<article class="q" aria-label="Questão ${k}">
+      <div class="qh"><h3>Questão ${k}</h3><div class="meta" ${hide ? "hidden" : ""} data-meta>${meta}</div></div>
+      <div class="imgs">${q.enun.map(s => `<img src="img/${s}" alt="Enunciado da questão ${k} (Unicamp ${hide ? "" : q.ano})" loading="lazy">`).join("")}</div>
+      <details data-id="${q.id}"><summary><span>Resposta esperada e comentários da banca</span><span class="meta muted" style="font-weight:400">${meta.replace(/<span class="tag[^]*$/, "")}</span></summary>
+        <div class="imgs">${q.resp.map(s => `<img src="img/${s}" alt="Resposta esperada da questão ${k}" loading="lazy">`).join("")}</div></details>
+      <div class="score"><label for="s-${q.id}">Minha nota</label>
+        <select id="s-${q.id}" data-score><option value="">–</option>${[0, 1, 2, 3, 4].map(v => `<option>${v}</option>`).join("")}</select><span class="muted">de 4 pontos</span></div>
+    </article>`;
+  }
+  el.innerHTML = html;
+  el.querySelectorAll("details").forEach(d => d.addEventListener("toggle", () => { if (d.open) d.closest(".q").querySelector("[data-meta]").hidden = false; }));
+  el.querySelectorAll("[data-score]").forEach(s => s.addEventListener("change", total));
+  total(); document.getElementById("sug").textContent = `Tempo sugerido: ${Math.floor(exam.length * MIN_POR_QUESTAO / 60)}h${String(exam.length * MIN_POR_QUESTAO % 60).padStart(2, "0")}`;
+  window.scrollTo({ top: el.offsetTop - 16 });
+}
+
+function total() {
+  const s = [...document.querySelectorAll("[data-score]")], done = s.filter(x => x.value !== "");
+  const pts = done.reduce((a, x) => a + +x.value, 0);
+  document.getElementById("total").textContent = exam.length ? `Nota: ${pts} de ${exam.length * 4}` + (done.length < s.length ? ` (${done.length}/${s.length} corrigidas)` : ` · ${Math.round(100 * pts / (exam.length * 4))}%`) : "";
+}
+
+let t0 = 0, acc = 0, timer = null;
+const fmtT = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` };
+function tick() { document.getElementById("clock").textContent = fmtT(acc + (timer ? Date.now() - t0 : 0)); }
+function resetClock() { clearInterval(timer); timer = null; acc = 0; tick(); document.getElementById("clockBtn").textContent = "Iniciar cronômetro"; }
+document.getElementById("clockBtn").onclick = e => {
+  if (timer) { acc += Date.now() - t0; clearInterval(timer); timer = null; e.target.textContent = "Continuar"; }
+  else { t0 = Date.now(); timer = setInterval(tick, 1000); e.target.textContent = "Pausar"; } tick(); };
+
+document.getElementById("seg").onclick = e => { const b = e.target.closest("button"); if (!b) return; period = +b.dataset.p;
+  document.querySelectorAll("#seg button").forEach(x => x.setAttribute("aria-pressed", x === b)); };
+document.getElementById("gen").onclick = generate;
+document.getElementById("print").onclick = () => exam.length ? window.print() : null;
+document.getElementById("hideMeta").onchange = () => exam.length && render();
+document.getElementById("reset").onclick = () => { seen = new Set(); store.set("vistas", []); info(); };
+function info() { document.getElementById("seenInfo").textContent = `${B.length} questões no banco · ${seen.size} já usadas em simulados`; }
+info();
+// Reabre o último simulado gerado neste navegador.
+const last = store.get("ultimo", []).map(id => B.find(q => q.id === id)).filter(Boolean);
+if (last.length) { exam = last.map(q => { const { f, nAnos } = stats(q.materia); return { ...q, tipo: f[q.assunto] >= FIXO_MIN ? "fixo" : "rot", freq: f[q.assunto] || 0, nAnos }; }); render(); window.scrollTo(0, 0); }
+</script>
+</body>
+</html>
